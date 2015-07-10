@@ -44,23 +44,34 @@ dropZone.addEventListener('drop', handleFileSelect, false);
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
-var source = context.createBufferSource(); // creates a sound source
+//var source = context.createBufferSource(); // creates a sound source
+var source;
 var volumeSample = context.createGain();
+var startTime = 0;
+var startOffset = 0;
 
 function playSound() {
-    source.buffer = audioBuffer;                    // tell the source which sound to play
-    //source.connect(context.destination);       // connect the source to the context's destination (the speakers)
+    source = context.createBufferSource();
+    source.buffer = audioBuffer;
+    //source.connect(context.destination);
     source.connect(volumeSample);
     volumeSample.connect(context.destination);
     volumeSample.gain.value = range.value;
-    source.start(0);                           // play the source now
-                                               // note: on older systems, may have to use deprecated noteOn(time);
+    startTime = context.currentTime;
+    console.log('Start time:', startTime);
+    console.log('Start offset:', startOffset);
+    console.log('Start %:', startOffset % source.buffer);
+    source.start(0, startOffset % source.buffer.duration);
+
 }
 
 
 function stopSound() {
     if (source) {
+        //startTime = context.currentTime;
         source.stop(0);
+        startOffset += context.currentTime - startTime;
+
     }
 }
 
