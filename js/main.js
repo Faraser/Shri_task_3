@@ -4,9 +4,13 @@ var reader, audioBuffer;
 function handleFileSelect(evt) {
     evt.stopPropagation();
     evt.preventDefault();
-
-    var files = evt.dataTransfer.files; // FileList object.
-
+    console.log(evt.target.id);
+    var files;
+    if (evt.target.id === "drop_zone") {
+        files = evt.dataTransfer.files; // FileList object.
+    } else if (evt.target.id === "files"){
+        files = evt.target.files;
+    }
     // files is a FileList of File objects. List some properties.
     var output = [];
     for (var i = 0, f; f = files[i]; i++) {
@@ -42,6 +46,7 @@ var dropZone = document.getElementById('drop_zone');
 dropZone.addEventListener('dragover', handleDragOver, false);
 dropZone.addEventListener('drop', handleFileSelect, false);
 
+document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
@@ -224,3 +229,5 @@ for (var i=0; i<radios.length; i++) {
         setVisualization();
     })
 }
+
+
