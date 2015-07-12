@@ -9,11 +9,16 @@
 <div id="drop_zone"><span>Drop files here</span></div>
 <output id="list"></output>
 <br>
-<button onclick="playSound()" disabled>Start</button>
-<button onclick="stopSound()" disabled>Stop</button>
+<!--<button id="play" onclick="playSound()" disabled>Start</button>-->
+<button id="play"  disabled>Play</button>
+<button id="stop"  disabled>Stop</button>
 <br>
-<!--<input type="range" min="0" max="1" value="0.5" step="0.1" onchange="changeVolume()"/>-->
 <input type="range" min="0" max="1" value="0.5" step="0.01" />
+<br>
+<input type="radio" value="wave" name="visualization" />Wave
+<input type="radio" value="spectrum" name="visualization"/>Spectrum
+<br>
+<canvas height="100" width="400" id="waveform"></canvas>
 <script src="js/main.js"></script>
 </body>
 </html>
