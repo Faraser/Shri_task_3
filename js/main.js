@@ -1,52 +1,52 @@
 'use strict'
 var reader, audioBuffer;
 
-function handleFileSelect(evt) {
-    evt.stopPropagation();
-    evt.preventDefault();
-    console.log(evt.target.id);
-    var files;
-    if (evt.target.id === "drop_zone") {
-        files = evt.dataTransfer.files; // FileList object.
-    } else if (evt.target.id === "files"){
-        files = evt.target.files;
-    }
-    // files is a FileList of File objects. List some properties.
-    var output = [];
-    for (var i = 0, f; f = files[i]; i++) {
-        output.push('<li><strong>', f.name, '</strong> (', f.type || 'n/a', ') - ',
-            f.size, ' bytes, last modified: ',
-            f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
-            '</li>');
-        reader = new FileReader();
-        reader.onload = (function (theFile) {
-            return function (e) {
-                // Render thumbnail.
-                console.log('Load start');
-                initSound(e.target.result);
-
-
-            };
-        })(f);
-        reader.readAsArrayBuffer(f);
-
-
-    }
-    document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
-}
-
-function handleDragOver(evt) {
-    evt.stopPropagation();
-    evt.preventDefault();
-    evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
-}
-
-// Setup the dnd listeners.
-var dropZone = document.getElementById('drop_zone');
-dropZone.addEventListener('dragover', handleDragOver, false);
-dropZone.addEventListener('drop', handleFileSelect, false);
-
-document.getElementById('files').addEventListener('change', handleFileSelect, false);
+//function handleFileSelect(evt) {
+//    evt.stopPropagation();
+//    evt.preventDefault();
+//    console.log(evt.target.id);
+//    var files;
+//    if (evt.target.id === "drop_zone") {
+//        files = evt.dataTransfer.files; // FileList object.
+//    } else if (evt.target.id === "files"){
+//        files = evt.target.files;
+//    }
+//    // files is a FileList of File objects. List some properties.
+//    var output = [];
+//    for (var i = 0, f; f = files[i]; i++) {
+//        output.push('<li><strong>', f.name, '</strong> (', f.type || 'n/a', ') - ',
+//            f.size, ' bytes, last modified: ',
+//            f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+//            '</li>');
+//        reader = new FileReader();
+//        reader.onload = (function (theFile) {
+//            return function (e) {
+//                // Render thumbnail.
+//                console.log('Load start');
+//                initSound(e.target.result);
+//
+//
+//            };
+//        })(f);
+//        reader.readAsArrayBuffer(f);
+//
+//
+//    }
+//    document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+//}
+//
+//function handleDragOver(evt) {
+//    evt.stopPropagation();
+//    evt.preventDefault();
+//    evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+//}
+//
+//// Setup the dnd listeners.
+//var dropZone = document.getElementById('drop_zone');
+//dropZone.addEventListener('dragover', handleDragOver, false);
+//dropZone.addEventListener('drop', handleFileSelect, false);
+//
+//document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
@@ -230,4 +230,18 @@ for (var i=0; i<radios.length; i++) {
     })
 }
 
+var audio = document.getElementById('audio_player');
+var files_in = document.getElementById('files');
+    files_in.onchange = function() {
+    var files = this.files;
+    var file = URL.createObjectURL(files[0]);
+    audio.src = file;
+};
 
+window.addEventListener('load', function(e) {
+    source = context.createMediaElementSource(audio);
+    source.connect(volumeSample);
+    source.connect(analyser);
+    volumeSample.connect(context.destination);
+
+}, false);
