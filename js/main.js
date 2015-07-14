@@ -1,52 +1,66 @@
 'use strict'
 var reader, audioBuffer;
 
-//function handleFileSelect(evt) {
-//    evt.stopPropagation();
-//    evt.preventDefault();
-//    console.log(evt.target.id);
-//    var files;
-//    if (evt.target.id === "drop_zone") {
-//        files = evt.dataTransfer.files; // FileList object.
-//    } else if (evt.target.id === "files"){
-//        files = evt.target.files;
-//    }
-//    // files is a FileList of File objects. List some properties.
-//    var output = [];
-//    for (var i = 0, f; f = files[i]; i++) {
-//        output.push('<li><strong>', f.name, '</strong> (', f.type || 'n/a', ') - ',
-//            f.size, ' bytes, last modified: ',
-//            f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
-//            '</li>');
-//        reader = new FileReader();
-//        reader.onload = (function (theFile) {
-//            return function (e) {
-//                // Render thumbnail.
-//                console.log('Load start');
-//                initSound(e.target.result);
-//
-//
-//            };
-//        })(f);
-//        reader.readAsArrayBuffer(f);
-//
-//
-//    }
-//    document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+var files, tags;
+function handleFileSelect(evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+    console.log(evt.target.id);
+
+    if (evt.target.id === "drop_zone") {
+        files = evt.dataTransfer.files; // FileList object.
+        //playlist.concat(evt.dataTransfer.files); // FileList object.
+        console.log(files);
+        console.log(typeof files);
+    } else if (evt.target.id === "files"){
+        files = evt.target.files;
+        //playlist.concat(evt.target.files);
+    }
+    var file = files[0];
+    audio.src = URL.createObjectURL(files[0]);
+
+    ID3.loadTags(file.name,
+        function() {
+            tags = ID3.getAllTags(file.name);
+            console.log(tags);
+        },
+        {tags: ["artist", "title", "album", "year", "comment", "track", "genre", "lyrics", "picture"],
+     dataReader: FileAPIReader(file)});
+
+    //audio.src = URL.createObjectURL(playlist[0]);
+    // files is a FileList of File objects. List some properties.
+    var output = [];
+    for (var i = 0, f; f = files[i]; i++) {
+        output.push('<li><strong>', f.name, '</strong> (', f.type || 'n/a', ') - ',
+            f.size, ' bytes, last modified: ',
+            f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+            '</li>')
+    }
+    document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+}
+
+
+//function handleFileSelect(e){
+//    e.stopPropagation();
+//    e.preventDefault();
+//    var files = e.dataTransfer.files;
+//    console.log(files);
+//    audio.src = URL.createObjectURL(files[0]);
 //}
-//
-//function handleDragOver(evt) {
-//    evt.stopPropagation();
-//    evt.preventDefault();
-//    evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
-//}
-//
-//// Setup the dnd listeners.
-//var dropZone = document.getElementById('drop_zone');
-//dropZone.addEventListener('dragover', handleDragOver, false);
-//dropZone.addEventListener('drop', handleFileSelect, false);
-//
-//document.getElementById('files').addEventListener('change', handleFileSelect, false);
+
+
+function handleDragOver(evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+    evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+}
+
+// Setup the dnd listeners.
+var dropZone = document.getElementById('drop_zone');
+dropZone.addEventListener('dragover', handleDragOver, false);
+dropZone.addEventListener('drop', handleFileSelect, false);
+
+document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
@@ -112,17 +126,21 @@ var playButton = document.getElementById('play');
 var stopButton = document.getElementById('stop');
 function togglePlay() {
     if (!play) {
-        playSound();
+        //playSound();
+        audio.play();
         playButton.innerText = "Pause";
         play = true;
     } else {
-        pauseSound();
+        //pauseSound();
+        audio.pause();
         playButton.innerText = "Play";
         play = false;
     }
 }
 function stopPlay() {
-    stopSound();
+    //stopSound();
+    audio.pause();
+    audio.currentTime = 0;
     play = false;
     playButton.innerText = "Play";
 }
@@ -231,17 +249,28 @@ for (var i=0; i<radios.length; i++) {
 }
 
 var audio = document.getElementById('audio_player');
-var files_in = document.getElementById('files');
-    files_in.onchange = function() {
-    var files = this.files;
-    var file = URL.createObjectURL(files[0]);
-    audio.src = file;
-};
+//var files_in = document.getElementById('files');
+//    files_in.onchange = function() {
+//    var files = this.files;
+//    audio.src = URL.createObjectURL(files[0]);
+//};
 
 window.addEventListener('load', function(e) {
     source = context.createMediaElementSource(audio);
     source.connect(volumeSample);
-    source.connect(analyser);
+    volumeSample.connect(analyser);
     volumeSample.connect(context.destination);
 
 }, false);
+
+
+function updateProgress() {
+   var progress = document.getElementById("progress");
+   var value = 0;
+   if (audio.currentTime > 0) {
+      //value = Math.floor((100 / audio.duration) * audio.currentTime);
+      value = ((100 / audio.duration) * audio.currentTime).toFixed(2);
+   }
+   progress.style.width = value + "%";
+}
+audio.addEventListener("timeupdate", updateProgress, false);
