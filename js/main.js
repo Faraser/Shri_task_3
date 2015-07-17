@@ -1,6 +1,4 @@
 'use strict'
-var reader, audioBuffer;
-
 var files, tags;
 function handleFileSelect(evt) {
     evt.stopPropagation();
@@ -22,16 +20,15 @@ function handleFileSelect(evt) {
     ID3.loadTags(file.name,
         function () {
             tags = ID3.getAllTags(file.name);
-            console.log(tags);
             document.getElementById("artist").textContent = tags.artist || "";
             document.getElementById("title").textContent = tags.title || "";
             document.getElementById("album").textContent = tags.album || "";
             document.getElementById("year").textContent = tags.year || "";
-            document.getElementById("comment").textContent = (tags.comment||{}).text || "";
+            document.getElementById("comment").textContent = (tags.comment || {}).text || "";
             document.getElementById("genre").textContent = tags.genre || "";
             document.getElementById("track").textContent = tags.track || "";
-            document.getElementById("lyrics").textContent = (tags.lyrics||{}).lyrics || "";
-            if( "picture" in tags ) {
+            document.getElementById("lyrics").textContent = (tags.lyrics || {}).lyrics || "";
+            if ("picture" in tags) {
                 var image = tags.picture;
                 var base64String = "";
                 for (var i = 0; i < image.data.length; i++) {
@@ -270,13 +267,26 @@ function updateProgress() {
     }
     progress.style.width = value + "%";
 }
-audio.addEventListener("timeupdate", updateProgress, false);
+audio.addEventListener('timeupdate', updateProgress, false);
+var currentTrack = 0;
+audio.addEventListener('ended', function () {
+    if (currentTrack <= files.length) {
+        currentTrack++;
+        audio.src = URL.createObjectURL(files[currentTrack]);
+        audio.play();
+    } else {
+        currentTrack = 0;
+        audio.src = URL.createObjectURL(files[currentTrack]);
+        playButton.innerText = "Play";
+    }
 
-progressBar.addEventListener('click', function(e) {
+}, false);
+
+progressBar.addEventListener('click', function (e) {
     console.log(e.clientX);
     var x = e.clientX - progress.offsetLeft;
-    var width = x*100/progressBar.clientWidth;
+    var width = x * 100 / progressBar.clientWidth;
     console.log(width);
     progress.style.width = width + '%';
-    audio.currentTime = audio.duration*width/100;
+    audio.currentTime = audio.duration * width / 100;
 });
