@@ -23,6 +23,28 @@ function handleFileSelect(evt) {
         function () {
             tags = ID3.getAllTags(file.name);
             console.log(tags);
+            document.getElementById("artist").textContent = tags.artist || "";
+            document.getElementById("title").textContent = tags.title || "";
+            document.getElementById("album").textContent = tags.album || "";
+            document.getElementById("year").textContent = tags.year || "";
+            document.getElementById("comment").textContent = (tags.comment||{}).text || "";
+            document.getElementById("genre").textContent = tags.genre || "";
+            document.getElementById("track").textContent = tags.track || "";
+            document.getElementById("lyrics").textContent = (tags.lyrics||{}).lyrics || "";
+            if( "picture" in tags ) {
+                var image = tags.picture;
+                var base64String = "";
+                for (var i = 0; i < image.data.length; i++) {
+                    base64String += String.fromCharCode(image.data[i]);
+                }
+                document.getElementById("art").src = "data:" + image.format + ";base64," + window.btoa(base64String);
+                document.getElementById("art").style.display = "block";
+                document.getElementById("art").style.width = "100px"
+
+            } else {
+                document.getElementById("art").style.display = "none";
+                document.getElementById("art").style.margin = "20px";
+            }
         },
         {
             tags: ["artist", "title", "album", "year", "comment", "track", "genre", "lyrics", "picture"],
@@ -66,26 +88,22 @@ volumeInput.addEventListener('input', function (e) {
 });
 
 
-var play = false;
 var playButton = document.getElementById('play');
 var stopButton = document.getElementById('stop');
 function togglePlay() {
     if (files) {
-        if (!play) {
+        if (audio.paused) {
             audio.play();
             playButton.innerText = "Pause";
-            play = true;
         } else {
             audio.pause();
             playButton.innerText = "Play";
-            play = false;
         }
     }
 }
 function stopPlay() {
     audio.pause();
     audio.currentTime = 0;
-    play = false;
     playButton.innerText = "Play";
 }
 
@@ -242,8 +260,9 @@ window.addEventListener('load', function (e) {
 }, false);
 
 /*Progress bar*/
+var progress = document.getElementById("progress");
+var progressBar = document.getElementById("progressBar");
 function updateProgress() {
-    var progress = document.getElementById("progress");
     var value = 0;
     if (audio.currentTime > 0) {
         //value = Math.floor((100 / audio.duration) * audio.currentTime);
@@ -252,3 +271,12 @@ function updateProgress() {
     progress.style.width = value + "%";
 }
 audio.addEventListener("timeupdate", updateProgress, false);
+
+progressBar.addEventListener('click', function(e) {
+    console.log(e.clientX);
+    var x = e.clientX - progress.offsetLeft;
+    var width = x*100/progressBar.clientWidth;
+    console.log(width);
+    progress.style.width = width + '%';
+    audio.currentTime = audio.duration*width/100;
+});
