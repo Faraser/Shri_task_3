@@ -1,22 +1,7 @@
 'use strict'
 var files, tags;
-function handleFileSelect(evt) {
-    evt.stopPropagation();
-    evt.preventDefault();
-    console.log(evt.target.id);
 
-    if (evt.target.id === "drop_zone") {
-        files = evt.dataTransfer.files; // FileList object.
-        //playlist.concat(evt.dataTransfer.files); // FileList object.
-        console.log(files);
-        console.log(typeof files);
-    } else if (evt.target.id === "files") {
-        files = evt.target.files;
-        //playlist.concat(evt.target.files);
-    }
-    var file = files[0];
-    audio.src = URL.createObjectURL(files[0]);
-
+function updateMetaData(file){
     ID3.loadTags(file.name,
         function () {
             tags = ID3.getAllTags(file.name);
@@ -37,37 +22,48 @@ function handleFileSelect(evt) {
                 document.getElementById("art").src = "data:" + image.format + ";base64," + window.btoa(base64String);
                 document.getElementById("art").style.display = "block";
                 document.getElementById("art").style.width = "100px"
-
+                document.getElementById("art").style.margin = "20px";
             } else {
                 document.getElementById("art").style.display = "none";
-                document.getElementById("art").style.margin = "20px";
             }
         },
         {
             tags: ["artist", "title", "album", "year", "comment", "track", "genre", "lyrics", "picture"],
             dataReader: FileAPIReader(file)
         });
+}
 
-    //audio.src = URL.createObjectURL(playlist[0]);
-    // files is a FileList of File objects. List some properties.
+function handleFileSelect(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    console.log(e.target.id);
+
+    if (e.target.id === "drop_zone") {
+        files = e.dataTransfer.files;
+        console.log(files);
+        console.log(typeof files);
+    } else if (e.target.id === "files") {
+        files = e.target.files;
+    }
+    var file = files[0];
+    audio.src = URL.createObjectURL(files[0]);
+
+    updateMetaData(file);
+
     var output = [];
     for (var i = 0, f; f = files[i]; i++) {
-        output.push('<li><strong>', f.name, '</strong> (', f.type || 'n/a', ') - ',
-            f.size, ' bytes, last modified: ',
-            f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
-            '</li>')
+        output.push('<li><strong>', f.name, '</strong>', '</li>');
     }
     document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
 }
 
 
-function handleDragOver(evt) {
-    evt.stopPropagation();
-    evt.preventDefault();
-    evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+function handleDragOver(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
 }
 
-// Setup the dnd listeners.
 var dropZone = document.getElementById('drop_zone');
 dropZone.addEventListener('dragover', handleDragOver, false);
 dropZone.addEventListener('drop', handleFileSelect, false);
@@ -267,20 +263,35 @@ function updateProgress() {
     }
     progress.style.width = value + "%";
 }
-audio.addEventListener('timeupdate', updateProgress, false);
-var currentTrack = 0;
-audio.addEventListener('ended', function () {
-    if (currentTrack <= files.length) {
-        currentTrack++;
-        audio.src = URL.createObjectURL(files[currentTrack]);
-        audio.play();
-    } else {
-        currentTrack = 0;
-        audio.src = URL.createObjectURL(files[currentTrack]);
-        playButton.innerText = "Play";
-    }
+audio.addEventListener('timeupdate', updateProgress);
 
-}, false);
+var changeTrack = function() {
+    var currentTrack = 0;
+    return function (i) {
+        console.log(currentTrack);
+        if (currentTrack + i >= 0) {
+            currentTrack =currentTrack + i
+        } else {
+            currentTrack = 0;
+        }
+        if (currentTrack < files.length) {
+            audio.src = URL.createObjectURL(files[currentTrack]);
+            audio.play();
+        } else {
+            currentTrack = 0;
+            audio.src = URL.createObjectURL(files[currentTrack]);
+            playButton.innerText = "Play";
+        }
+        updateMetaData(files[currentTrack]);
+        updateProgress();
+    }
+}();
+audio.addEventListener('ended', function(e){changeTrack(1);});
+document.getElementById('prev').addEventListener('click', function(e){changeTrack(-1)});
+document.getElementById('next').addEventListener('click', function(e){changeTrack(1)});
+
+
+
 
 progressBar.addEventListener('click', function (e) {
     console.log(e.clientX);
