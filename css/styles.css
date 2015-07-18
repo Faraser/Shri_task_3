@@ -1,11 +1,15 @@
 #drop_zone {
     /*box-sizing: border-box;*/
     display: inline-block;
-    width: 400px;
-    height: 100px;
-    border: 2px dashed aqua;
-    line-height: 100px;
     text-align: center;
+    width: 300px;
+    height: 200px;
+    border: 2px dashed rgba(0, 0, 0, .3);
+    border-radius: 20px;
+    position: relative;
+    font:normal 20px/180px Arial, sans-serif;
+    color: rgba(0, 0, 0, .3);
+
 }
 
 #drop_zone span {
@@ -30,3 +34,12 @@
     display: inline-block;
     border-radius: 2px;
 }
+
+#player {
+    height: 400px;
+    width: 500px;
+}
+
+
+dt, dd { float: left }
+dt { clear:both }
