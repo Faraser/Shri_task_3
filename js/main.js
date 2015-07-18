@@ -57,17 +57,21 @@ function togglePlay() {
     if (files) {
         if (audio.paused) {
             audio.play();
-            playButton.textContent = "Pause";
+            //playButton.textContent = "Pause";
+            playButton.classList.add('pause')
         } else {
             audio.pause();
-            playButton.textContent = "Play";
+            //playButton.textContent = "Play";
+            playButton.classList.remove('pause')
         }
     }
 }
 function stopPlay() {
-    audio.pause();
-    audio.currentTime = 0;
-    playButton.textContent = "Play";
+    if (!audio.paused) {
+        audio.pause();
+        audio.currentTime = 0;
+        playButton.classList.remove('pause')
+    }
 }
 
 
@@ -93,7 +97,7 @@ var changeTrack = function () {
         } else {
             currentTrack = 0;
             audio.src = URL.createObjectURL(files[currentTrack]);
-            playButton.textContent = "Play";
+            playButton.classList.remove('pause')
         }
         updateMetaData(files[currentTrack]);
         updateProgress();
@@ -140,11 +144,10 @@ function setPreset(preset) {
         filters[i].gain.value = presets[preset][i];
     }
 }
-document.getElementById('genres').addEventListener('click', function (e) {
+
+document.getElementById('genres').addEventListener('change', function (e) {
     console.log(e);
-    if (e.target.type === "radio") {
-        setPreset(e.target.value);
-    }
+    setPreset(e.target.value);
 });
 
 /* Init audio */
@@ -180,7 +183,7 @@ progressBar.addEventListener('click', function (e) {
 });
 
 /*Draw visualization*/
-var WIDTH = 400;
+var WIDTH = 220;
 var HEIGHT = 100;
 var analyser = context.createAnalyser();
 var canvas = document.getElementById('waveform');
@@ -197,7 +200,7 @@ function drawWaveform() {
     function draw() {
         //var drawVisual = requestAnimationFrame(draw);
         analyser.getByteTimeDomainData(dataArray);
-        canvasCtx.fillStyle = 'rgb(200, 200, 200)';
+        canvasCtx.fillStyle = 'rgb(200, 200, 200, 0.2)';
         canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
         canvasCtx.lineWidth = 2;
         canvasCtx.strokeStyle = 'rgb(0, 0, 0)';
@@ -266,11 +269,10 @@ function setVisualization(value) {
     }
 }
 
-document.getElementById('visualization').addEventListener('click', function (e) {
+
+document.getElementById('visualizations').addEventListener('change', function (e) {
     console.log(e);
-    if (e.target.type === "radio") {
-        setVisualization(e.target.value);
-    }
+    setVisualization(e.target.value);
 });
 
 /* Metadata */
@@ -278,14 +280,12 @@ function updateMetaData(file) {
     ID3.loadTags(file.name,
         function () {
             tags = ID3.getAllTags(file.name);
+            console.log(tags);
             document.getElementById("artist").textContent = tags.artist || "";
             document.getElementById("title").textContent = tags.title || "";
             document.getElementById("album").textContent = tags.album || "";
             document.getElementById("year").textContent = tags.year || "";
-            document.getElementById("comment").textContent = (tags.comment || {}).text || "";
             document.getElementById("genre").textContent = tags.genre || "";
-            document.getElementById("track").textContent = tags.track || "";
-            document.getElementById("lyrics").textContent = (tags.lyrics || {}).lyrics || "";
             if ("picture" in tags) {
                 var image = tags.picture;
                 var base64String = "";
@@ -295,9 +295,10 @@ function updateMetaData(file) {
                 document.getElementById("art").src = "data:" + image.format + ";base64," + window.btoa(base64String);
                 document.getElementById("art").style.display = "block";
                 document.getElementById("art").style.width = "100px";
-                document.getElementById("art").style.margin = "20px";
             } else {
-                document.getElementById("art").style.display = "none";
+                document.getElementById("art").src = "img/default.jpg";
+                document.getElementById("art").style.display = "block";
+
             }
         },
         {

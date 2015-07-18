@@ -7,67 +7,65 @@
 </head>
 <body>
 <div id="player">
-
-    <input type="file" id="files" accept="audio/mpeg,audio/ogg,audio/wav,audio/acc">
-    <br>
-
-    <div id="drop_zone"><span>Drop files here</span></div>
-    <output id="list"></output>
-    <br>
-
     <div id="controls">
-        <button id="play" >Play</button>
-        <button id="stop" >Stop</button>
-        <button id="prev" >Prev</button>
-        <button id="next" >Next</button>
-        <div id="progressBar"><span id="progress">&nbsp;</span></div>
-        <input type="range" min="0" max="1" value="0.5" step="0.01"/>
-    </div>
+        <div id="progressBar" class="progress"><span id="progress">&nbsp;</span></div>
+        <div>
+            <button id="prev" class="ctrl prev"></button>
+            <button id="play" class="ctrl play"></button>
+            <button id="stop" class="ctrl stop"></button>
+            <button id="next" class="ctrl next"></button>
+            <input type="range" min="0" max="1" value="0.5" step="0.01"/>
+        </div>
 
-    <br>
-
-    <div id="genres">
-        <input type="radio" value="normal" name="genre" checked/>Normal
-        <input type="radio" value="rock" name="genre"/>Rock
-        <input type="radio" value="pop" name="genre"/>Pop
-        <input type="radio" value="classic" name="genre"/>Classic
-        <input type="radio" value="jazz" name="genre"/>Jazz
     </div>
-    <div id="visualization">
-        <input type="radio" value="wave" name="visualization"/>Wave
-        <input type="radio" value="spectrum" name="visualization"/>Spectrum
-    </div>
-    <canvas height="100" width="400" id="waveform"></canvas>
+    <hr>
     <div id="metadata">
-        <dl>
-            <dt>Artist</dt>
-            <dd id="artist"></dd>
+        <div class="album"><img id="art" src="img/default.jpg"></div>
 
-            <dt>Title</dt>
-            <dd id="title"></dd>
+        <div class="data">
+            <span>Artist:</span>
+            <span id="artist"></span>
+            <br>
+            <span>Title:</span>
+            <span id="title"></span>
+            <br>
+            <span>Album:</span>
+            <span id="album"></span>
+            <br>
+            <span>Year:</span>
+            <span id="year"></span>
+            <br>
+            <span>Genre:</span>
+            <span id="genre"></span>
 
-            <dt>Album</dt
-            <dd id="album"></dd>
-
-            <dt>Year</dt>
-            <dd id="year"></dd>
-
-            <dt>Comment</dt>
-            <dd id="comment"></dd>
-
-            <dt>Genre</dt>
-            <dd id="genre"></dd>
-
-            <dt>Track</dt>
-            <dd id="track"></dd>
-
-            <dt>Lyrics</dt>
-            <dd id="lyrics"></dd>
-
-            <dt>Cover Art</dt>
-            <dd><img id="art" src=""></dd>
-        </dl>
+        </div>
     </div>
+    <hr>
+    <div id="visualization">
+        <select id="visualizations">
+            <option value="wave">Wave</option>
+            <option value="spectrum">Spectrum</option>
+        </select>
+        <select id="genres">
+            <option value="normal">Normal</option>
+            <option value="rock">Rock</option>
+            <option value="pop">Pop</option>
+            <option value="classic">Classic</option>
+            <option value="jazz">Jazz</option>
+        </select>
+        <canvas height="100" width="200" id="waveform"></canvas>
+    </div>
+    <div>
+        <input type="file" id="files" accept="audio/mpeg,audio/ogg,audio/wav,audio/acc">
+
+        <div id="drop_zone"><span>Drop files here</span></div>
+    </div>
+    <hr>
+    <div id="playlist">
+        <div id="list"></div>
+    </div>
+
+
 </div>
 <script src="js/id3-minimized.js"></script>
 <script src="js/main.js"></script>
