@@ -1,38 +1,8 @@
-'use strict'
+'use strict';
 var files, tags;
+var audio = new Audio();
 
-function updateMetaData(file){
-    ID3.loadTags(file.name,
-        function () {
-            tags = ID3.getAllTags(file.name);
-            document.getElementById("artist").textContent = tags.artist || "";
-            document.getElementById("title").textContent = tags.title || "";
-            document.getElementById("album").textContent = tags.album || "";
-            document.getElementById("year").textContent = tags.year || "";
-            document.getElementById("comment").textContent = (tags.comment || {}).text || "";
-            document.getElementById("genre").textContent = tags.genre || "";
-            document.getElementById("track").textContent = tags.track || "";
-            document.getElementById("lyrics").textContent = (tags.lyrics || {}).lyrics || "";
-            if ("picture" in tags) {
-                var image = tags.picture;
-                var base64String = "";
-                for (var i = 0; i < image.data.length; i++) {
-                    base64String += String.fromCharCode(image.data[i]);
-                }
-                document.getElementById("art").src = "data:" + image.format + ";base64," + window.btoa(base64String);
-                document.getElementById("art").style.display = "block";
-                document.getElementById("art").style.width = "100px"
-                document.getElementById("art").style.margin = "20px";
-            } else {
-                document.getElementById("art").style.display = "none";
-            }
-        },
-        {
-            tags: ["artist", "title", "album", "year", "comment", "track", "genre", "lyrics", "picture"],
-            dataReader: FileAPIReader(file)
-        });
-}
-
+/* Load files */
 function handleFileSelect(e) {
     e.stopPropagation();
     e.preventDefault();
@@ -80,40 +50,141 @@ volumeInput.addEventListener('input', function (e) {
     volumeSample.gain.value = e.target.value;
 });
 
-
+/* Controls */
 var playButton = document.getElementById('play');
 var stopButton = document.getElementById('stop');
 function togglePlay() {
     if (files) {
         if (audio.paused) {
             audio.play();
-            playButton.innerText = "Pause";
+            playButton.textContent = "Pause";
         } else {
             audio.pause();
-            playButton.innerText = "Play";
+            playButton.textContent = "Play";
         }
     }
 }
 function stopPlay() {
     audio.pause();
     audio.currentTime = 0;
-    playButton.innerText = "Play";
+    playButton.textContent = "Play";
 }
 
 
 playButton.addEventListener('click', function (e) {
     togglePlay();
 });
-
 stopButton.addEventListener('click', function (e) {
     stopPlay();
 });
+
+var changeTrack = function () {
+    var currentTrack = 0;
+    return function (i) {
+        console.log(currentTrack);
+        if (currentTrack + i >= 0) {
+            currentTrack = currentTrack + i;
+        } else {
+            currentTrack = 0;
+        }
+        if (currentTrack < files.length) {
+            audio.src = URL.createObjectURL(files[currentTrack]);
+            audio.play();
+        } else {
+            currentTrack = 0;
+            audio.src = URL.createObjectURL(files[currentTrack]);
+            playButton.textContent = "Play";
+        }
+        updateMetaData(files[currentTrack]);
+        updateProgress();
+    };
+}();
+audio.addEventListener('ended', function (e) {
+    changeTrack(1);
+});
+document.getElementById('prev').addEventListener('click', function (e) {
+    changeTrack(-1);
+});
+document.getElementById('next').addEventListener('click', function (e) {
+    changeTrack(1);
+});
+
+
+/*Presets equalizer*/
+var frequencyArr = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+var filters = frequencyArr.map(function (item) {
+    var filter = context.createBiquadFilter();
+    filter.type = "peaking";
+    filter.frequency.value = item;
+    filter.Q.value = 1;
+    filter.gain.value = 0;
+    return filter;
+});
+filters.reduce(function (prev, curr) {
+    prev.connect(curr);
+    return curr;
+});
+
+
+var presets = {
+    rock: [-1, 1, 2, 3, -1, -1, 0, 0, 4, 4],
+    normal: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    pop: [-2, -1, 0, 2, 4, 4, 2, 0, -1, -2],
+    classic: [0, 6, 6, 3, 0, 0, 0, 0, 2, 2],
+    jazz: [0, 0, 0, 3, 3, 3, 0, 2, 4, 4]
+};
+
+
+function setPreset(preset) {
+    for (var i = 0; i < filters.length; i++) {
+        filters[i].gain.value = presets[preset][i];
+    }
+}
+document.getElementById('genres').addEventListener('click', function (e) {
+    console.log(e);
+    if (e.target.type === "radio") {
+        setPreset(e.target.value);
+    }
+});
+
+/* Init audio */
+window.addEventListener('load', function (e) {
+    source = context.createMediaElementSource(audio);
+    source.connect(volumeSample);
+    volumeSample.connect(filters[0]);
+    filters[filters.length - 1].connect(analyser);
+    filters[filters.length - 1].connect(context.destination);
+
+});
+
+/*Progress bar*/
+var progress = document.getElementById("progress");
+var progressBar = document.getElementById("progressBar");
+function updateProgress() {
+    var value = 0;
+    if (audio.currentTime > 0) {
+        //value = Math.floor((100 / audio.duration) * audio.currentTime);
+        value = ((100 / audio.duration) * audio.currentTime).toFixed(2);
+    }
+    progress.style.width = value + "%";
+}
+audio.addEventListener('timeupdate', updateProgress);
+
+progressBar.addEventListener('click', function (e) {
+    console.log(e.clientX);
+    var x = e.clientX - progress.offsetLeft;
+    var width = x * 100 / progressBar.clientWidth;
+    console.log(width);
+    progress.style.width = width + '%';
+    audio.currentTime = audio.duration * width / 100;
+});
+
 /*Draw visualization*/
 var WIDTH = 400;
 var HEIGHT = 100;
 var analyser = context.createAnalyser();
 var canvas = document.getElementById('waveform');
-var canvasCtx = waveform.getContext('2d');
+var canvasCtx = canvas.getContext('2d');
 var bufferLength = analyser.frequencyBinCount;
 var dataArray = new Uint8Array(bufferLength);
 
@@ -158,6 +229,7 @@ function drawWaveform() {
 
     draw();
 }
+
 /*Spectrum*/
 function drawSpectrum() {
     analyser.fftSize = 256;
@@ -185,7 +257,6 @@ function drawSpectrum() {
     draw();
 }
 
-var radios = document.getElementsByName('visualization');
 
 function setVisualization(value) {
     if (value === 'wave') {
@@ -195,109 +266,47 @@ function setVisualization(value) {
     }
 }
 
-for (var i = 0; i < radios.length; i++) {
-    radios[i].addEventListener('change', function (e) {
+document.getElementById('visualization').addEventListener('click', function (e) {
+    console.log(e);
+    if (e.target.type === "radio") {
         setVisualization(e.target.value);
-    })
-}
-
-var audio = new Audio();
-
-/*Presets equalizer*/
-var frequencyArr = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-var filterArr = frequencyArr.map(function (item) {
-    var filter = context.createBiquadFilter();
-    filter.type = "peaking";
-    filter.frequency.value = item;
-    filter.Q.value = 1;
-    filter.gain.value = 0;
-    return filter;
-});
-filterArr.reduce(function (prev, curr) {
-    prev.connect(curr);
-    return curr;
+    }
 });
 
-
-var presets = {
-    rock: [-1, 1, 2, 3, -1, -1, 0, 0, 4, 4],
-    normal: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    pop: [-2, -1, 0, 2, 4, 4, 2, 0, -1, -2],
-    classic: [0, 6, 6, 3, 0, 0, 0, 0, 2, 2],
-    jazz: [0, 0, 0, 3, 3, 3, 0, 2, 4, 4]
-};
-
-
-var genres = document.getElementsByName('genre');
-
-function setPreset(preset) {
-    for (var i = 0; i < filterArr.length; i++) {
-        filterArr[i].gain.value = presets[preset][i];
-    }
+/* Metadata */
+function updateMetaData(file) {
+    ID3.loadTags(file.name,
+        function () {
+            tags = ID3.getAllTags(file.name);
+            document.getElementById("artist").textContent = tags.artist || "";
+            document.getElementById("title").textContent = tags.title || "";
+            document.getElementById("album").textContent = tags.album || "";
+            document.getElementById("year").textContent = tags.year || "";
+            document.getElementById("comment").textContent = (tags.comment || {}).text || "";
+            document.getElementById("genre").textContent = tags.genre || "";
+            document.getElementById("track").textContent = tags.track || "";
+            document.getElementById("lyrics").textContent = (tags.lyrics || {}).lyrics || "";
+            if ("picture" in tags) {
+                var image = tags.picture;
+                var base64String = "";
+                for (var i = 0; i < image.data.length; i++) {
+                    base64String += String.fromCharCode(image.data[i]);
+                }
+                document.getElementById("art").src = "data:" + image.format + ";base64," + window.btoa(base64String);
+                document.getElementById("art").style.display = "block";
+                document.getElementById("art").style.width = "100px";
+                document.getElementById("art").style.margin = "20px";
+            } else {
+                document.getElementById("art").style.display = "none";
+            }
+        },
+        {
+            tags: ["artist", "title", "album", "year", "comment", "track", "genre", "lyrics", "picture"],
+            dataReader: FileAPIReader(file)
+        });
 }
 
-for (var i = 0; i < genres.length; i++) {
-    genres[i].addEventListener('change', function (e) {
-        setPreset(e.target.value);
-    });
-}
-
-
-window.addEventListener('load', function (e) {
-    source = context.createMediaElementSource(audio);
-    source.connect(volumeSample);
-    volumeSample.connect(filterArr[0]);
-    filterArr[filterArr.length - 1].connect(analyser);
-    filterArr[filterArr.length - 1].connect(context.destination);
-
-}, false);
-
-/*Progress bar*/
-var progress = document.getElementById("progress");
-var progressBar = document.getElementById("progressBar");
-function updateProgress() {
-    var value = 0;
-    if (audio.currentTime > 0) {
-        //value = Math.floor((100 / audio.duration) * audio.currentTime);
-        value = ((100 / audio.duration) * audio.currentTime).toFixed(2);
-    }
-    progress.style.width = value + "%";
-}
-audio.addEventListener('timeupdate', updateProgress);
-
-var changeTrack = function() {
-    var currentTrack = 0;
-    return function (i) {
-        console.log(currentTrack);
-        if (currentTrack + i >= 0) {
-            currentTrack =currentTrack + i
-        } else {
-            currentTrack = 0;
-        }
-        if (currentTrack < files.length) {
-            audio.src = URL.createObjectURL(files[currentTrack]);
-            audio.play();
-        } else {
-            currentTrack = 0;
-            audio.src = URL.createObjectURL(files[currentTrack]);
-            playButton.innerText = "Play";
-        }
-        updateMetaData(files[currentTrack]);
-        updateProgress();
-    }
-}();
-audio.addEventListener('ended', function(e){changeTrack(1);});
-document.getElementById('prev').addEventListener('click', function(e){changeTrack(-1)});
-document.getElementById('next').addEventListener('click', function(e){changeTrack(1)});
 
 
 
 
-progressBar.addEventListener('click', function (e) {
-    console.log(e.clientX);
-    var x = e.clientX - progress.offsetLeft;
-    var width = x * 100 / progressBar.clientWidth;
-    console.log(width);
-    progress.style.width = width + '%';
-    audio.currentTime = audio.duration * width / 100;
-});
