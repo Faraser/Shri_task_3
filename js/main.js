@@ -38,6 +38,10 @@ var dropZone = document.getElementById('drop_zone');
 dropZone.addEventListener('dragover', handleDragOver, false);
 dropZone.addEventListener('drop', handleFileSelect, false);
 
+
+document.addEventListener('dragover', function(e){e.preventDefault()}); // Remove default dnd
+document.addEventListener('drop', function(e){e.preventDefault()});
+
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -183,24 +187,25 @@ progressBar.addEventListener('click', function (e) {
 });
 
 /*Draw visualization*/
-var WIDTH = 220;
-var HEIGHT = 100;
 var analyser = context.createAnalyser();
-var canvas = document.getElementById('waveform');
+var canvas = document.getElementById('visual');
+var WIDTH = canvas.width;
+var HEIGHT = canvas.height;
 var canvasCtx = canvas.getContext('2d');
-var bufferLength = analyser.frequencyBinCount;
-var dataArray = new Uint8Array(bufferLength);
-
+var animationFrame;
 
 /*Waveform*/
 function drawWaveform() {
     analyser.fftSize = 2048;
-
+    var bufferLength = analyser.frequencyBinCount;
+    var dataArray = new Uint8Array(bufferLength);
     canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
+
     function draw() {
         //var drawVisual = requestAnimationFrame(draw);
+        animationFrame = requestAnimationFrame(draw);
         analyser.getByteTimeDomainData(dataArray);
-        canvasCtx.fillStyle = 'rgb(200, 200, 200, 0.2)';
+        canvasCtx.fillStyle = 'rgb(255, 255, 255)';
         canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
         canvasCtx.lineWidth = 2;
         canvasCtx.strokeStyle = 'rgb(0, 0, 0)';
@@ -227,7 +232,7 @@ function drawWaveform() {
 
         canvasCtx.lineTo(canvas.width, canvas.height / 2);
         canvasCtx.stroke();
-        requestAnimationFrame(draw);
+
     }
 
     draw();
@@ -236,15 +241,16 @@ function drawWaveform() {
 /*Spectrum*/
 function drawSpectrum() {
     analyser.fftSize = 256;
-
+    var bufferLength = analyser.frequencyBinCount;
+    var dataArray = new Uint8Array(bufferLength);
     canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
     function draw() {
-        requestAnimationFrame(draw);
+        animationFrame = requestAnimationFrame(draw);
         analyser.getByteFrequencyData(dataArray);
 
         canvasCtx.fillStyle = 'rgb(0, 0, 0)';
         canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-        var barWidth = (WIDTH / bufferLength) * 25;
+        var barWidth = (WIDTH / bufferLength) * 2.5;
         var barHeight;
         var x = 0;
         for (var i = 0; i < bufferLength; i++) {
@@ -262,10 +268,16 @@ function drawSpectrum() {
 
 
 function setVisualization(value) {
+    if (animationFrame) {cancelAnimationFrame(animationFrame)};
     if (value === 'wave') {
         drawWaveform();
     } else if (value === 'spectrum') {
         drawSpectrum();
+    } else {
+        canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
+        canvasCtx.fillStyle = "rgba(0,0,0,0)";
+        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+
     }
 }
 

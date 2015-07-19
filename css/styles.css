@@ -2,12 +2,12 @@
     /*box-sizing: border-box;*/
     display: inline-block;
     text-align: center;
-    width: 230px;
-    height: 125px;
+    width: 215px;
+    height: 97px;
     border: 2px dashed #fff;
     border-radius: 20px;
     position: relative;
-    font: normal 20px/130px Arial, sans-serif;
+    font: normal 20px/100px Arial, sans-serif;
     color: #fff;
 
 }
@@ -50,6 +50,7 @@
 #controls {
     /*background: #312f2f*/
     padding: 20px 30px;
+    height: 25px;
 }
 
 .ctrl {
@@ -60,6 +61,7 @@
     border: none;
     background: url('../img/controls.png') no-repeat;
     cursor: pointer;
+    float: left;
 }
 
 .prev {
@@ -112,7 +114,7 @@ input[type="range"] {
     margin-top: 3px;
     display: inline-block;
     overflow: hidden;
-    max-width: 100px;
+    max-width: 150px;
     height: 15px;
     text-overflow:ellipsis;
     white-space:nowrap
@@ -125,20 +127,25 @@ input[type="range"] {
 }
 
 #visualization select {
-    margin: 15px 12px 15px 30px;
+    margin: 5px 12px 5px 30px;
 }
 
 
 #visualization canvas {
-    margin: 0 12px 0 30px;
+    margin: 15px 12px 0 30px;
     border-radius: 10px;
 }
 
 input[type="file"]{
+    width: 225px;
     border-radius: 10px;
     background: rgba(0,0,0, 0.3);
-    margin-bottom: 5px;
+    /*margin-bottom: 5px;*/
+    margin: 5px 0 17px 0;
     color: #ffffff;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap
 }
 #playlist {
     margin-top: -7px;
