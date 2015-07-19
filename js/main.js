@@ -1,13 +1,14 @@
 'use strict';
-var files, tags;
+var tags;
 var audio = new Audio();
+var playlist = [];
 
 /* Load files */
 function handleFileSelect(e) {
     e.stopPropagation();
     e.preventDefault();
     console.log(e.target.id);
-
+    var files;
     if (e.target.id === "drop_zone") {
         files = e.dataTransfer.files;
         console.log(files);
@@ -15,23 +16,24 @@ function handleFileSelect(e) {
     } else if (e.target.id === "files") {
         files = e.target.files;
     }
-    var file = files[0];
-    audio.src = URL.createObjectURL(files[0]);
 
-    updateMetaData(file);
-
-    var output = [];
-    for (var i = 0, f; f = files[i]; i++) {
-        output.push('<li><strong>', f.name, '</strong>', '</li>');
+    if (!playlist.length) {
+        audio.src = URL.createObjectURL(files[0]);
+        updateMetaData(files[0]);
     }
-    document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+    var ul = document.querySelector('#list ul');
+    for (var i = 0, f; f = files[i]; i++) {
+        ul.innerHTML += ('<li><strong><a href="#" data-track="'+playlist.length+'">' + f.name + '</a></strong></li>');
+        playlist.push(files[i]);
+
+    }
 }
 
 
 function handleDragOver(e) {
     e.stopPropagation();
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+    e.dataTransfer.dropEffect = 'copy';
 }
 
 var dropZone = document.getElementById('drop_zone');
@@ -58,15 +60,14 @@ volumeInput.addEventListener('input', function (e) {
 var playButton = document.getElementById('play');
 var stopButton = document.getElementById('stop');
 function togglePlay() {
-    if (files) {
+    if (playlist.length) {
         if (audio.paused) {
             audio.play();
-            //playButton.textContent = "Pause";
-            playButton.classList.add('pause')
+            playButton.classList.add('pause');
+            document.querySelectorAll('#list a')[currentTrack].classList.add('current');
         } else {
             audio.pause();
-            //playButton.textContent = "Play";
-            playButton.classList.remove('pause')
+            playButton.classList.remove('pause');
         }
     }
 }
@@ -74,7 +75,7 @@ function stopPlay() {
     if (!audio.paused) {
         audio.pause();
         audio.currentTime = 0;
-        playButton.classList.remove('pause')
+        playButton.classList.remove('pause');
     }
 }
 
@@ -86,27 +87,29 @@ stopButton.addEventListener('click', function (e) {
     stopPlay();
 });
 
-var changeTrack = function () {
-    var currentTrack = 0;
-    return function (i) {
-        console.log(currentTrack);
-        if (currentTrack + i >= 0) {
-            currentTrack = currentTrack + i;
-        } else {
-            currentTrack = 0;
-        }
-        if (currentTrack < files.length) {
-            audio.src = URL.createObjectURL(files[currentTrack]);
-            audio.play();
-        } else {
-            currentTrack = 0;
-            audio.src = URL.createObjectURL(files[currentTrack]);
-            playButton.classList.remove('pause')
-        }
-        updateMetaData(files[currentTrack]);
-        updateProgress();
-    };
-}();
+var currentTrack = 0;
+var changeTrack = function (i) {
+    console.log(currentTrack);
+    document.querySelectorAll('#list a')[currentTrack].classList.remove('current');
+    playButton.classList.add('pause');
+    if (currentTrack + i >= 0) {
+        currentTrack = currentTrack + i;
+    } else {
+        currentTrack = 0;
+    }
+    if (currentTrack < playlist.length) {
+        audio.src = URL.createObjectURL(playlist[currentTrack]);
+        audio.play();
+    } else {
+        currentTrack = 0;
+        audio.src = URL.createObjectURL(playlist[currentTrack]);
+        playButton.classList.remove('pause');
+    }
+    document.querySelectorAll('#list a')[currentTrack].classList.add('current');
+    updateMetaData(playlist[currentTrack]);
+    updateProgress();
+};
+
 audio.addEventListener('ended', function (e) {
     changeTrack(1);
 });
@@ -115,6 +118,13 @@ document.getElementById('prev').addEventListener('click', function (e) {
 });
 document.getElementById('next').addEventListener('click', function (e) {
     changeTrack(1);
+});
+/*Navigation in playlist*/
+document.getElementById('list').addEventListener('click', function(e){
+    e.preventDefault();
+    if (e.target.nodeName === "A") {
+        changeTrack(e.target.attributes["data-track"].value - currentTrack);
+    }
 });
 
 
@@ -170,7 +180,6 @@ var progressBar = document.getElementById("progressBar");
 function updateProgress() {
     var value = 0;
     if (audio.currentTime > 0) {
-        //value = Math.floor((100 / audio.duration) * audio.currentTime);
         value = ((100 / audio.duration) * audio.currentTime).toFixed(2);
     }
     progress.style.width = value + "%";
@@ -202,7 +211,6 @@ function drawWaveform() {
     canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
 
     function draw() {
-        //var drawVisual = requestAnimationFrame(draw);
         animationFrame = requestAnimationFrame(draw);
         analyser.getByteTimeDomainData(dataArray);
         canvasCtx.fillStyle = 'rgb(255, 255, 255)';
@@ -314,7 +322,7 @@ function updateMetaData(file) {
             }
         },
         {
-            tags: ["artist", "title", "album", "year", "comment", "track", "genre", "lyrics", "picture"],
+            tags: ["artist", "title", "album", "year", "genre", "picture"],
             dataReader: FileAPIReader(file)
         });
 }
