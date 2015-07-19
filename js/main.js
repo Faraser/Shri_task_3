@@ -20,6 +20,7 @@ function handleFileSelect(e) {
     if (!playlist.length) {
         audio.src = URL.createObjectURL(files[0]);
         updateMetaData(files[0]);
+
     }
     var ul = document.querySelector('#list ul');
     for (var i = 0, f; f = files[i]; i++) {
