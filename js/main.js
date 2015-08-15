@@ -2,19 +2,25 @@
 var tags;
 var audio = new Audio();
 var playlist = [];
-
+var isSafari = Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0;
 /* Load files */
 function handleFileSelect(e) {
+    //console.log(e);
     e.stopPropagation();
     e.preventDefault();
-    console.log(e.target.id);
+    var target = e.target;
+
+    while (target != this) {
+        target = target.parentNode;
+    }
+
     var files;
-    if (e.target.id === "drop_zone") {
+    if (target.id === "drop_zone") {
         files = e.dataTransfer.files;
-        console.log(files);
-        console.log(typeof files);
-    } else if (e.target.id === "files") {
-        files = e.target.files;
+        //console.log(files);
+        //console.log(typeof files);
+    } else if (target.id === "files") {
+        files = target.files;
     }
 
     if (!playlist.length) {
@@ -23,8 +29,8 @@ function handleFileSelect(e) {
 
     }
     var ul = document.querySelector('#list ul');
-    for (var i = 0, f; f = files[i]; i++) {
-        ul.innerHTML += ('<li><strong><a href="#" data-track="'+playlist.length+'">' + f.name + '</a></strong></li>');
+    for (var i = 0; i < files.length; i++) {
+        ul.innerHTML += ('<li><strong><a href="#" data-track="' + playlist.length + '">' + files[i].name + '</a></strong></li>');
         playlist.push(files[i]);
 
     }
@@ -42,8 +48,12 @@ dropZone.addEventListener('dragover', handleDragOver, false);
 dropZone.addEventListener('drop', handleFileSelect, false);
 
 
-document.addEventListener('dragover', function(e){e.preventDefault()}); // Remove default dnd
-document.addEventListener('drop', function(e){e.preventDefault()});
+document.addEventListener('dragover', function (e) {
+    e.preventDefault()
+}); // Remove default dnd
+document.addEventListener('drop', function (e) {
+    e.preventDefault()
+});
 
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
@@ -82,10 +92,18 @@ function stopPlay() {
 
 
 playButton.addEventListener('click', function (e) {
-    togglePlay();
+    if (isSafari) {
+        saf.play()
+    } else {
+        togglePlay();
+    }
 });
 stopButton.addEventListener('click', function (e) {
-    stopPlay();
+    if (isSafari) {
+        saf.stop()
+    } else {
+        stopPlay();
+    }
 });
 
 var currentTrack = 0;
@@ -112,19 +130,35 @@ var changeTrack = function (i) {
 };
 
 audio.addEventListener('ended', function (e) {
-    changeTrack(1);
+    if (isSafari) {
+        saf.changeTrack(1)
+    } else {
+        changeTrack(1);
+    }
 });
 document.getElementById('prev').addEventListener('click', function (e) {
-    changeTrack(-1);
+    if (isSafari) {
+        saf.changeTrack(-1)
+    } else {
+        changeTrack(-1);
+    }
 });
 document.getElementById('next').addEventListener('click', function (e) {
-    changeTrack(1);
+    if (isSafari) {
+        saf.changeTrack(1)
+    } else {
+        changeTrack(1);
+    }
 });
-/*Navigation in playlist*/
-document.getElementById('list').addEventListener('click', function(e){
+/*Navigation of playlist*/
+document.getElementById('list').addEventListener('click', function (e) {
     e.preventDefault();
     if (e.target.nodeName === "A") {
-        changeTrack(e.target.attributes["data-track"].value - currentTrack);
+        if (isSafari) {
+            saf.changeTrack(e.target.attributes["data-track"].value - currentTrack)
+        } else {
+            changeTrack(e.target.attributes["data-track"].value - currentTrack);
+        }
     }
 });
 
@@ -165,15 +199,66 @@ document.getElementById('genres').addEventListener('change', function (e) {
     setPreset(e.target.value);
 });
 
-/* Init audio */
-window.addEventListener('load', function (e) {
-    source = context.createMediaElementSource(audio);
-    source.connect(volumeSample);
-    volumeSample.connect(filters[0]);
-    filters[filters.length - 1].connect(analyser);
-    filters[filters.length - 1].connect(context.destination);
+/* */
+var initSaf = function () {
+    var getData = function () {
+        var reader = new FileReader();
+        reader.readAsArrayBuffer(playlist[currentTrack]);
+        source = context.createBufferSource();
+        reader.onload = function () {
+            context.decodeAudioData(reader.result, function (buf) {
+                console.log('ok');
+                source.buffer = buf;
+                source.connect(volumeSample);
+                volumeSample.connect(filters[0]);
+                filters[filters.length - 1].connect(analyser);
+                filters[filters.length - 1].connect(context.destination);
+            })
+        }
+    };
 
-});
+    var changeTrack = function (i) {
+        console.log(currentTrack);
+        document.querySelectorAll('#list a')[currentTrack].classList.remove('current');
+        playButton.classList.add('pause');
+        if (currentTrack + i >= 0) {
+            currentTrack = currentTrack + i;
+        } else {
+            currentTrack = 0;
+        }
+        if (currentTrack < playlist.length) {
+            if (source) {source.stop(0)};
+            getData();
+            source.start(0);
+        } else {
+            currentTrack = 0;
+            playButton.classList.remove('pause');
+        }
+        document.querySelectorAll('#list a')[currentTrack].classList.add('current');
+        updateMetaData(playlist[currentTrack]);
+        updateProgress();
+    };
+
+    var play = function () {
+        getData();
+        source.start(0);
+        source.onended = function () {
+            changeTrack(1)
+        };
+        document.querySelectorAll('#list a')[currentTrack].classList.add('current');
+    };
+
+    var stop = function () {
+        source.stop(0);
+    };
+
+    return {
+        play: play,
+        stop: stop,
+        changeTrack: changeTrack
+
+    }
+};
 
 /*Progress bar*/
 var progress = document.getElementById("progress");
@@ -277,7 +362,9 @@ function drawSpectrum() {
 
 
 function setVisualization(value) {
-    if (animationFrame) {cancelAnimationFrame(animationFrame)};
+    if (animationFrame) {
+        cancelAnimationFrame(animationFrame)
+    }
     if (value === 'wave') {
         drawWaveform();
     } else if (value === 'spectrum') {
@@ -328,7 +415,22 @@ function updateMetaData(file) {
         });
 }
 
+/* Init audio */
+window.addEventListener('load', function (e) {
+    if (isSafari) {
+        console.log('safari');
+        progressBar.style.display = 'none';
+        window.saf = initSaf();
+    } else {
+        source = context.createMediaElementSource(audio);
+        source.connect(volumeSample);
+        volumeSample.connect(filters[0]);
+        filters[filters.length - 1].connect(analyser);
+        filters[filters.length - 1].connect(context.destination);
+    }
 
+
+});
 
 
 
