@@ -47,10 +47,10 @@
 
 
     document.addEventListener('dragover', function (e) {
-        e.preventDefault()
+        e.preventDefault();
     }); // Remove default dnd
     document.addEventListener('drop', function (e) {
-        e.preventDefault()
+        e.preventDefault();
     });
 
     document.getElementById('files').addEventListener('change', handleFileSelect, false);
@@ -91,10 +91,10 @@
     };
 
 
-    playButton.addEventListener('click', function (e) {
+    playButton.addEventListener('click', function () {
         togglePlay();
     });
-    stopButton.addEventListener('click', function (e) {
+    stopButton.addEventListener('click', function () {
         stopPlay();
     });
 
@@ -121,13 +121,13 @@
         updateProgress();
     };
 
-    audio.addEventListener('ended', function (e) {
+    audio.addEventListener('ended', function () {
         changeTrack(1);
     });
-    document.getElementById('prev').addEventListener('click', function (e) {
+    document.getElementById('prev').addEventListener('click', function () {
         changeTrack(-1);
     });
-    document.getElementById('next').addEventListener('click', function (e) {
+    document.getElementById('next').addEventListener('click', function () {
         changeTrack(1);
     });
     /*Navigation of playlist*/
@@ -178,7 +178,7 @@
     /* Fix for Safari*/
     var initSaf = function () {
         var played = false;
-        window.getData = function () {
+        var getData = function () {
             var reader = new FileReader();
             reader.readAsArrayBuffer(playlist[currentTrack]);
             source = context.createBufferSource();
@@ -190,8 +190,8 @@
                     volumeSample.connect(filters[0]);
                     filters[filters.length - 1].connect(analyser);
                     filters[filters.length - 1].connect(context.destination);
-                })
-            }
+                });
+            };
         };
 
         var changeTrackSafari = function (i) {
@@ -218,7 +218,7 @@
 
         var nextTrack = function () {
             console.log('end');
-            changeTrackSafari(1)
+            changeTrackSafari(1);
         };
 
         function playSafari() {
@@ -349,7 +349,7 @@
 
     function setVisualization(value) {
         if (animationFrame) {
-            cancelAnimationFrame(animationFrame)
+            cancelAnimationFrame(animationFrame);
         }
         if (value === 'wave') {
             drawWaveform();
@@ -365,7 +365,6 @@
 
 
     document.getElementById('visualizations').addEventListener('change', function (e) {
-        console.log(e);
         setVisualization(e.target.value);
     });
 
@@ -402,7 +401,7 @@
     }
 
     /* Init audio */
-    window.addEventListener('load', function (e) {
+    window.addEventListener('load', function () {
         if (isSafari) {
             progressBar.style.display = 'none';
             initSaf();
